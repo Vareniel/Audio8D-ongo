@@ -1,0 +1,21 @@
+{
+  "name": "audio8d-ongo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vareniel/Audio8D-ongo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Vareniel/Audio8D-ongo/issues"
+  },
+  "homepage": "https://github.com/Vareniel/Audio8D-ongo#readme"
+}

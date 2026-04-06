@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>8D Audio Studio Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --bg: #07070f;
+        --bdr: rgba(255,255,255,0.07);
+        --mint: #00e8b0;
+        --amber: #ffad3b;
+        --rose: #ff5577;
+        --violet: #a78bfa;
+        --cyan: #22d3ee;
+        --text: #ddd8f0;
+        --dim: rgba(221,216,240,0.36);
+        --mono: "JetBrains Mono", monospace;
+        --serif: "Cormorant Garamond", serif;
+      }
+      html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:var(--mono); }
+      body::before {
+        content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 28px 28px;
+        mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 30%, transparent 100%);
+      }
+      body::after {
+        content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+        background:
+          radial-gradient(ellipse 55% 45% at 20% 60%, rgba(0,232,176,0.07) 0%, transparent 65%),
+          radial-gradient(ellipse 40% 50% at 82% 28%, rgba(255,173,59,0.06) 0%, transparent 60%);
+      }
+
+      /* ═══ SHELL ═══ */
+      #app {
+        position:relative; z-index:1;
+        width:100vw; height:100vh;
+        display:grid;
+        grid-template-rows: 9vh 1fr;
+        grid-template-columns: 1fr 1.15fr;
+        grid-template-areas: "head head" "scope panel";
+      }
+
+      /* ── HEADER ── */
+      header {
+        grid-area:head;
+        display:flex; align-items:center; justify-content:space-between;
+        padding:0 2.4vw;
+        border-bottom:1px solid var(--bdr);
+        position:relative;
+      }
+      header::after {
+        content:""; position:absolute; bottom:-1px; left:2.4vw;
+        width:100px; height:1px;
+        background:linear-gradient(90deg, var(--mint), transparent);
+      }
+      .logo { display:flex; align-items:baseline; gap:10px; }
+      .logo-t { font-family:var(--serif); font-size:clamp(18px,2.2vw,30px); font-weight:300; letter-spacing:0.5px; }
+      .logo-t em { font-style:italic; color:var(--mint); }
+      .logo-tag { font-size:8px; letter-spacing:2.5px; text-transform:uppercase; color:var(--dim); border:1px solid var(--bdr); padding:2px 7px; border-radius:2px; }
+      .hdr-r { display:flex; align-items:center; gap:10px; }
+      .dot { width:6px; height:6px; border-radius:50%; background:var(--dim); transition:background .4s, box-shadow .4s; }
+      .dot.on { background:var(--mint); box-shadow:0 0 8px var(--mint),0 0 16px rgba(0,232,176,.4); animation:blink 1.2s ease-in-out infinite; }
+      @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+      .dot-l { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); transition:color .3s; }
+      .dot-l.on { color:var(--mint); }
+
+      /* ── SCOPE ── */
+      #scope-area {
+        grid-area:scope;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        border-right:1px solid var(--bdr);
+        padding:1.6vh 2vw;
+        gap:1.2vh;
+        overflow:hidden;
+      }
+      .sec-l { font-size:8px; letter-spacing:2.5px; text-transform:uppercase; color:var(--dim); align-self:flex-start; }
+      .scope-wrap { position:relative; width:min(34vw,62vh); height:min(34vw,62vh); flex-shrink:0; margin-bottom: 24px; }
+      #scope-cvs { width:100%; height:100%; border-radius:50%; }
+      .scope-ring { position:absolute; inset:-8px; border-radius:50%; border:1px solid var(--bdr); pointer-events:none; }
+      .scope-ring::before { content:""; position:absolute; inset:6px; border-radius:50%; border:1px solid rgba(255,255,255,.04); }
+      .lr { position:absolute; top:50%; transform:translateY(-50%); font-size:8px; letter-spacing:1px; color:var(--dim); }
+      .lr.l { left:-18px; }
+      .lr.r { right:-18px; }
+      .pan-out { position:absolute; bottom:-26px; left:50%; transform:translateX(-50%); font-size:9px; letter-spacing:2px; color:var(--dim); white-space:nowrap; transition:color .2s; }
+      .pan-out.on { color:var(--mint); }
+      .meta-row { display:flex; gap:2vw; flex-wrap:wrap; justify-content:center; }
+      .meta-item { text-align:center; }
+      .meta-v { font-size:clamp(10px,1.1vw,14px); font-weight:500; color:var(--text); }
+      .meta-v.m { color:var(--mint); }
+      .meta-l { font-size:7px; letter-spacing:2px; text-transform:uppercase; color:var(--dim); margin-top:2px; }
+
+      /* ── PANEL ── */
+      #panel {
+        grid-area:panel;
+        display:flex; flex-direction:column;
+        padding:1.4vh 2vw 1.2vh;
+        gap:0.9vh;
+        overflow-y:auto; overflow-x:hidden;
+      }
+      #panel::-webkit-scrollbar { width:3px; }
+      #panel::-webkit-scrollbar-track { background:transparent; }
+      #panel::-webkit-scrollbar-thumb { background:var(--bdr); border-radius:2px; }
+
+      /* upload */
+      .upload {
+        position:relative; border:1px dashed rgba(255,255,255,.1); border-radius:7px;
+        padding:1vh 1.2vw; cursor:pointer;
+        transition:border-color .25s, background .25s;
+        display:flex; align-items:center; gap:1vw; flex-shrink:0;
+      }
+      .upload:hover, .upload.drag { border-color:var(--mint); background:rgba(0,232,176,.04); }
+      .upload input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+      .up-ico { font-size:clamp(13px,1.6vw,20px); opacity:.4; transition:opacity .2s; }
+      .upload:hover .up-ico { opacity:1; }
+      .up-main { font-size:clamp(9px,.9vw,12px); font-weight:500; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .up-sub { font-size:7px; color:var(--dim); letter-spacing:1px; margin-top:2px; }
+
+      .chip { display:none; align-items:center; gap:10px; background:rgba(0,232,176,.05); border:1px solid rgba(0,232,176,.15); border-radius:6px; padding:.7vh 1.2vw; flex-shrink:0; }
+      .chip.on { display:flex; }
+      .chip-ico { font-size:13px; }
+      .chip-name { font-size:clamp(8px,.82vw,11px); font-weight:500; word-break:break-all; }
+      .chip-sz { font-size:7px; color:var(--dim); margin-top:1px; }
+
+      /* YouTube */
+      .yt-section { display:flex; flex-direction:column; gap:.5vh; flex-shrink:0; }
+      .yt-divider { display:flex; align-items:center; gap:8px; font-size:7px; letter-spacing:2.5px; text-transform:uppercase; color:var(--dim); }
+      .yt-divider::before, .yt-divider::after { content:""; flex:1; height:1px; background:var(--bdr); }
+      .yt-row { display:flex; gap:.6vw; align-items:stretch; }
+      .yt-input { flex:1; background:rgba(255,255,255,.03); border:1px solid var(--bdr); border-radius:6px; padding:.75vh 1vw; color:var(--text); font-family:var(--mono); font-size:clamp(8px,.82vw,11px); letter-spacing:.3px; outline:none; transition:border-color .2s, background .2s; }
+      .yt-input::placeholder { color:var(--dim); font-size:clamp(7px,.75vw,10px); }
+      .yt-input:focus { border-color:rgba(255,80,80,.5); background:rgba(255,50,50,.04); }
+      .btn-yt { background:rgba(255,50,50,.1); color:#ff5555; border:1px solid rgba(255,50,50,.25); border-radius:6px; padding:0 1.2vw; font-family:var(--mono); font-size:clamp(7px,.78vw,10px); font-weight:500; letter-spacing:1px; text-transform:uppercase; cursor:pointer; white-space:nowrap; transition:all .2s; display:flex; align-items:center; gap:5px; flex-shrink:0; }
+      .btn-yt:hover:not(:disabled) { background:rgba(255,50,50,.18); box-shadow:0 0 14px rgba(255,50,50,.2); transform:translateY(-1px); }
+      .btn-yt:disabled { opacity:.3; cursor:not-allowed; }
+      .yt-status { font-size:7.5px; letter-spacing:1px; color:var(--dim); min-height:12px; transition:color .2s; display:flex; align-items:center; gap:6px; }
+      .yt-status.err { color:#ff5555; }
+      .yt-status.ok  { color:var(--mint); }
+      .yt-status.loading { color:var(--amber); }
+      .yt-spinner { display:inline-block; width:8px; height:8px; border:1px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+      @keyframes spin { to { transform:rotate(360deg); } }
+
+      /* section label */
+      .sl { font-size:7px; letter-spacing:2.5px; text-transform:uppercase; color:var(--dim); display:flex; align-items:center; gap:8px; flex-shrink:0; }
+      .sl::after { content:""; flex:1; height:1px; background:var(--bdr); }
+
+      /* tabs for effects */
+      .tab-bar { display:flex; gap:3px; flex-shrink:0; background:rgba(255,255,255,.03); border:1px solid var(--bdr); border-radius:7px; padding:3px; }
+      .tab-btn { flex:1; padding:.55vh 0; background:none; border:none; cursor:pointer; font-family:var(--mono); font-size:clamp(7px,.72vw,9px); letter-spacing:1.2px; text-transform:uppercase; color:var(--dim); border-radius:5px; transition:all .2s; white-space:nowrap; }
+      .tab-btn:hover { color:var(--text); }
+      .tab-btn.active { background:rgba(255,255,255,.07); color:var(--mint); }
+      .tab-pane { display:none; flex-direction:column; gap:.9vh; }
+      .tab-pane.active { display:flex; }
+
+      /* sliders */
+      .sliders { display:flex; flex-direction:column; gap:.85vh; flex-shrink:0; }
+      .sr { display:flex; align-items:center; gap:1vw; }
+      .sr-l { flex:1; }
+      .sr-lbl { font-size:7px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); margin-bottom:3px; display:flex; align-items:center; gap:6px; }
+      .sr-lbl .badge { font-size:5.5px; letter-spacing:1px; padding:1px 5px; border-radius:2px; background:rgba(0,232,176,.12); color:var(--mint); border:1px solid rgba(0,232,176,.2); }
+      .sr-lbl .badge.amber { background:rgba(255,173,59,.12); color:var(--amber); border-color:rgba(255,173,59,.2); }
+      .sr-lbl .badge.violet { background:rgba(167,139,250,.12); color:var(--violet); border-color:rgba(167,139,250,.2); }
+      .sr-lbl .badge.rose { background:rgba(255,85,119,.12); color:var(--rose); border-color:rgba(255,85,119,.2); }
+      .sr-lbl .badge.cyan { background:rgba(34,211,238,.12); color:var(--cyan); border-color:rgba(34,211,238,.2); }
+      .sr-val { font-size:clamp(9px,.85vw,11px); font-weight:500; color:var(--mint); min-width:46px; text-align:right; letter-spacing:.3px; flex-shrink:0; }
+
+      input[type="range"] { -webkit-appearance:none; appearance:none; width:100%; height:2px; border-radius:1px; background:rgba(255,255,255,.09); outline:none; cursor:pointer; }
+      input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:11px; height:11px; border-radius:50%; background:var(--bg); border:2px solid var(--mint); box-shadow:0 0 5px rgba(0,232,176,.5); cursor:pointer; transition:transform .15s, box-shadow .15s; }
+      input[type="range"]::-webkit-slider-thumb:hover { transform:scale(1.35); box-shadow:0 0 11px rgba(0,232,176,.8); }
+      input[type="range"]::-moz-range-thumb { width:11px; height:11px; border-radius:50%; border:2px solid var(--mint); background:var(--bg); cursor:pointer; }
+      #seekCtrl::-webkit-slider-thumb { border-color:var(--amber); box-shadow:0 0 5px rgba(255,173,59,.5); }
+      #seekCtrl::-webkit-slider-thumb:hover { box-shadow:0 0 11px rgba(255,173,59,.8); }
+      #seekCtrl::-moz-range-thumb { border-color:var(--amber); }
+
+      /* toggle switches */
+      .toggle-row { display:flex; align-items:center; justify-content:space-between; }
+      .toggle-lbl { font-size:7px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); }
+      .toggle-sw { position:relative; width:30px; height:16px; flex-shrink:0; cursor:pointer; }
+      .toggle-sw input { opacity:0; width:0; height:0; position:absolute; }
+      .toggle-track { position:absolute; inset:0; border-radius:8px; background:rgba(255,255,255,.1); border:1px solid var(--bdr); transition:background .2s; }
+      .toggle-sw input:checked + .toggle-track { background:rgba(0,232,176,.25); border-color:rgba(0,232,176,.4); }
+      .toggle-thumb { position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:var(--dim); transition:transform .2s, background .2s; pointer-events:none; }
+      .toggle-sw input:checked ~ .toggle-thumb { transform:translateX(14px); background:var(--mint); box-shadow:0 0 6px rgba(0,232,176,.6); }
+
+      /* eq grid */
+      .eq-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:.5vw; }
+      .eq-col { display:flex; flex-direction:column; align-items:center; gap:4px; }
+      .eq-slider { writing-mode:vertical-lr; direction:rtl; height:60px; width:2px; cursor:pointer; -webkit-appearance:none; appearance:none; background:rgba(255,255,255,.09); border-radius:1px; outline:none; }
+      .eq-slider::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--bg); border:2px solid var(--mint); box-shadow:0 0 5px rgba(0,232,176,.5); cursor:pointer; }
+      .eq-lbl { font-size:6px; letter-spacing:.5px; color:var(--dim); text-align:center; }
+      .eq-val { font-size:6.5px; color:var(--mint); font-weight:500; }
+
+      /* seek row */
+      .seek-row { flex-shrink:0; }
+      .seek-times { display:flex; justify-content:space-between; margin-bottom:5px; }
+      .seek-cur { font-size:clamp(9px,.9vw,12px); font-weight:500; color:var(--amber); letter-spacing:.5px; }
+      .seek-dur { font-size:clamp(8px,.8vw,10px); color:var(--dim); letter-spacing:.5px; }
+
+      /* viz */
+      .viz-wrap { height:50px; border:1px solid var(--bdr); border-radius:6px; overflow:hidden; background:rgba(0,0,0,.22); position:relative; flex-shrink:0; }
+      .viz-wrap::before { content:"FREQ"; position:absolute; top:5px; left:9px; font-size:6px; letter-spacing:2px; color:var(--dim); z-index:1; }
+      #viz { width:100%; height:100%; display:block; }
+
+      /* waveform */
+      .wave-wrap { height:36px; border:1px solid var(--bdr); border-radius:6px; overflow:hidden; background:rgba(0,0,0,.22); position:relative; flex-shrink:0; }
+      .wave-wrap::before { content:"WAVE"; position:absolute; top:5px; left:9px; font-size:6px; letter-spacing:2px; color:var(--dim); z-index:1; }
+      #waveViz { width:100%; height:100%; display:block; }
+
+      /* buttons */
+      .btn-row { display:flex; gap:.6vw; flex-shrink:0; }
+      .btn { flex:1; padding:1vh 0; border-radius:6px; border:none; cursor:pointer; font-family:var(--mono); font-size:clamp(7px,.78vw,10px); font-weight:500; letter-spacing:1.5px; text-transform:uppercase; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:5px; }
+      .btn:disabled { opacity:.25; cursor:not-allowed; transform:none!important; box-shadow:none!important; }
+      .btn-play { background:var(--mint); color:#050910; box-shadow:0 0 16px rgba(0,232,176,.2); }
+      .btn-play:hover:not(:disabled) { box-shadow:0 0 26px rgba(0,232,176,.45); transform:translateY(-1px); }
+      .btn-play.stop { background:rgba(0,232,176,.1); color:var(--mint); border:1px solid rgba(0,232,176,.3); box-shadow:none; }
+      .btn-loop { background:rgba(255,255,255,.04); color:var(--dim); border:1px solid var(--bdr); flex:0 0 auto; padding:.9vh 1vw; }
+      .btn-loop:hover:not(:disabled) { border-color:rgba(255,173,59,.4); color:var(--amber); }
+      .btn-loop.on { background:rgba(255,173,59,.1); color:var(--amber); border-color:rgba(255,173,59,.35); box-shadow:0 0 12px rgba(255,173,59,.18); }
+      .btn-dl { background:rgba(255,173,59,.09); color:var(--amber); border:1px solid rgba(255,173,59,.2); flex:0 0 auto; padding:.9vh 1vw; }
+      .btn-dl:hover:not(:disabled) { background:rgba(255,173,59,.16); box-shadow:0 0 16px rgba(255,173,59,.22); transform:translateY(-1px); }
+
+      /* preset row */
+      .preset-row { display:flex; gap:.4vw; flex-wrap:wrap; }
+      .btn-preset { background:rgba(255,255,255,.04); color:var(--dim); border:1px solid var(--bdr); border-radius:5px; padding:.5vh .8vw; font-family:var(--mono); font-size:clamp(6px,.68vw,8.5px); letter-spacing:.8px; text-transform:uppercase; cursor:pointer; transition:all .2s; white-space:nowrap; }
+      .btn-preset:hover { border-color:var(--violet); color:var(--violet); background:rgba(167,139,250,.06); }
+
+      /* progress */
+      .prog { display:none; flex-shrink:0; }
+      .prog.on { display:block; }
+      .prog-top { display:flex; justify-content:space-between; font-size:7.5px; letter-spacing:1px; color:var(--dim); margin-bottom:4px; }
+      .prog-track { height:2px; background:rgba(255,255,255,.06); border-radius:1px; overflow:hidden; }
+      .prog-fill { height:100%; width:0; background:linear-gradient(90deg,var(--mint),var(--amber)); transition:width .12s; }
+
+      /* toast */
+      .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(55px); background:rgba(10,10,18,.96); border:1px solid var(--bdr); border-radius:6px; padding:8px 15px; font-size:10px; letter-spacing:.5px; color:var(--text); backdrop-filter:blur(16px); z-index:99; transition:transform .33s cubic-bezier(.34,1.4,.64,1); white-space:nowrap; }
+      .toast.show { transform:translateX(-50%) translateY(0); }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <!-- HEADER -->
+      <header>
+        <div class="logo">
+          <span class="logo-t">8D <em>Audio</em> Studio <em style="font-size:.7em;color:var(--violet)">Pro</em></span>
+          <span class="logo-tag">Web Audio API</span>
+        </div>
+        <div class="hdr-r">
+          <div class="dot" id="dot"></div>
+          <div class="dot-l" id="dotLbl">standby</div>
+        </div>
+      </header>
+
+      <!-- SCOPE -->
+      <section id="scope-area">
+        <div class="sec-l">stereo field · pan scope</div>
+        <div class="scope-wrap">
+          <canvas id="scope-cvs"></canvas>
+          <div class="scope-ring"></div>
+          <span class="lr l">L</span>
+          <span class="lr r">R</span>
+          <div class="pan-out" id="panOut">PAN 0.00</div>
+        </div>
+        <div class="meta-row">
+          <div class="meta-item"><div class="meta-v m" id="mSpeed">0.15</div><div class="meta-l">Hz speed</div></div>
+          <div class="meta-item"><div class="meta-v" id="mRange">0.60</div><div class="meta-l">range</div></div>
+          <div class="meta-item"><div class="meta-v" id="mReverb">40%</div><div class="meta-l">reverb</div></div>
+          <div class="meta-item"><div class="meta-v" id="mPitch">1.00×</div><div class="meta-l">pitch</div></div>
+        </div>
+      </section>
+
+      <!-- PANEL -->
+      <section id="panel">
+        <!-- File upload -->
+        <div class="upload" id="uploadZone">
+          <input type="file" id="fileInput" accept=".mp3,audio/*" />
+          <div class="up-ico">⊕</div>
+          <div>
+            <div class="up-main">Drop file MP3 / klik untuk upload</div>
+            <div class="up-sub">MP3 · WAV · OGG · max 50MB</div>
+          </div>
+        </div>
+
+        <div class="chip" id="chip">
+          <div class="chip-ico">◈</div>
+          <div>
+            <div class="chip-name" id="chipName">—</div>
+            <div class="chip-sz" id="chipSz">—</div>
+          </div>
+        </div>
+
+        <!-- YouTube -->
+        <div class="yt-section">
+          <div class="yt-divider">atau dari YouTube</div>
+          <div class="yt-row">
+            <input type="text" class="yt-input" id="ytInput" placeholder="Paste URL YouTube · youtu.be/xxx" autocomplete="off" spellcheck="false" />
+            <button class="btn-yt" id="ytBtn">▶ Ambil</button>
+          </div>
+          <div class="yt-status" id="ytStatus"></div>
+        </div>
+
+        <!-- PRESETS -->
+        <div class="sl">quick presets</div>
+        <div class="preset-row">
+          <button class="btn-preset" data-preset="8d">8D Pure</button>
+          <button class="btn-preset" data-preset="concert">Concert Hall</button>
+          <button class="btn-preset" data-preset="cave">Cave Echo</button>
+          <button class="btn-preset" data-preset="telephone">Telephone</button>
+          <button class="btn-preset" data-preset="underwater">Underwater</button>
+          <button class="btn-preset" data-preset="lofi">Lo-Fi</button>
+          <button class="btn-preset" data-preset="bass">Bass Boost</button>
+          <button class="btn-preset" data-preset="night">Night Club</button>
+        </div>
+
+        <!-- EFFECT TABS -->
+        <div class="sl">effects</div>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="spatial">Spatial</button>
+          <button class="tab-btn" data-tab="dynamics">Dynamics</button>
+          <button class="tab-btn" data-tab="eq">EQ</button>
+          <button class="tab-btn" data-tab="modulation">Modulation</button>
+          <button class="tab-btn" data-tab="filter">Filter</button>
+        </div>
+
+        <!-- TAB: SPATIAL -->
+        <div class="tab-pane active" id="tab-spatial">
+          <div class="sliders">
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Rotation Speed <span class="badge">8D</span></div>
+                <input type="range" id="speedCtrl" min="0.02" max="1.5" step="0.01" value="0.15" />
+              </div>
+              <div class="sr-val" id="speedVal">0.15 Hz</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Rotation Range <span class="badge">8D</span></div>
+                <input type="range" id="depthCtrl" min="0.1" max="1" step="0.05" value="0.6" />
+              </div>
+              <div class="sr-val" id="depthVal">0.60</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Reverb Mix <span class="badge amber">SPACE</span></div>
+                <input type="range" id="reverbCtrl" min="0" max="100" step="5" value="40" />
+              </div>
+              <div class="sr-val" id="reverbVal">40%</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Reverb Decay <span class="badge amber">SPACE</span></div>
+                <input type="range" id="decayCtrl" min="0.3" max="6" step="0.1" value="2.5" />
+              </div>
+              <div class="sr-val" id="decayVal">2.5s</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Haas Delay <span class="badge amber">STEREO</span></div>
+                <input type="range" id="haasCtrl" min="0" max="35" step="1" value="0" />
+              </div>
+              <div class="sr-val" id="haasVal">0 ms</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Volume</div>
+                <input type="range" id="volCtrl" min="0" max="100" step="5" value="80" />
+              </div>
+              <div class="sr-val" id="volVal">80%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: DYNAMICS -->
+        <div class="tab-pane" id="tab-dynamics">
+          <div class="sliders">
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Pitch Rate <span class="badge violet">PITCH</span></div>
+                <input type="range" id="pitchCtrl" min="0.5" max="2" step="0.01" value="1" />
+              </div>
+              <div class="sr-val" id="pitchVal">1.00×</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Compressor Threshold <span class="badge violet">COMP</span></div>
+                <input type="range" id="compThreshCtrl" min="-60" max="0" step="1" value="-24" />
+              </div>
+              <div class="sr-val" id="compThreshVal">-24 dB</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Compressor Ratio <span class="badge violet">COMP</span></div>
+                <input type="range" id="compRatioCtrl" min="1" max="20" step="0.5" value="4" />
+              </div>
+              <div class="sr-val" id="compRatioVal">4:1</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Compressor Knee <span class="badge violet">COMP</span></div>
+                <input type="range" id="compKneeCtrl" min="0" max="40" step="1" value="10" />
+              </div>
+              <div class="sr-val" id="compKneeVal">10 dB</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Distortion <span class="badge rose">DIST</span></div>
+                <input type="range" id="distCtrl" min="0" max="100" step="1" value="0" />
+              </div>
+              <div class="sr-val" id="distVal">0%</div>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-lbl">Compressor Active</span>
+              <label class="toggle-sw">
+                <input type="checkbox" id="compToggle" checked />
+                <span class="toggle-track"></span>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: EQ -->
+        <div class="tab-pane" id="tab-eq">
+          <div class="sliders">
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Bass Boost <span class="badge">EQ</span></div>
+                <input type="range" id="bassCtrl" min="-15" max="15" step="1" value="0" />
+              </div>
+              <div class="sr-val" id="bassVal">0 dB</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Low Mid <span class="badge">EQ</span></div>
+                <input type="range" id="lowmidCtrl" min="-12" max="12" step="1" value="0" />
+              </div>
+              <div class="sr-val" id="lowmidVal">0 dB</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Mid <span class="badge">EQ</span></div>
+                <input type="range" id="midCtrl" min="-12" max="12" step="1" value="0" />
+              </div>
+              <div class="sr-val" id="midVal">0 dB</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">High Mid <span class="badge">EQ</span></div>
+                <input type="range" id="highmidCtrl" min="-12" max="12" step="1" value="0" />
+              </div>
+              <div class="sr-val" id="highmidVal">0 dB</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Treble <span class="badge">EQ</span></div>
+                <input type="range" id="trebleCtrl" min="-15" max="15" step="1" value="0" />
+              </div>
+              <div class="sr-val" id="trebleVal">0 dB</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: MODULATION -->
+        <div class="tab-pane" id="tab-modulation">
+          <div class="sliders">
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Chorus Mix <span class="badge cyan">CHORUS</span></div>
+                <input type="range" id="chorusMixCtrl" min="0" max="100" step="5" value="0" />
+              </div>
+              <div class="sr-val" id="chorusMixVal">0%</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Chorus Rate <span class="badge cyan">CHORUS</span></div>
+                <input type="range" id="chorusRateCtrl" min="0.1" max="8" step="0.1" value="1.5" />
+              </div>
+              <div class="sr-val" id="chorusRateVal">1.5 Hz</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Chorus Depth <span class="badge cyan">CHORUS</span></div>
+                <input type="range" id="chorusDepthCtrl" min="0" max="20" step="0.5" value="5" />
+              </div>
+              <div class="sr-val" id="chorusDepthVal">5 ms</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Flanger Mix <span class="badge violet">FLANGE</span></div>
+                <input type="range" id="flangerMixCtrl" min="0" max="100" step="5" value="0" />
+              </div>
+              <div class="sr-val" id="flangerMixVal">0%</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Flanger Rate <span class="badge violet">FLANGE</span></div>
+                <input type="range" id="flangerRateCtrl" min="0.05" max="5" step="0.05" value="0.5" />
+              </div>
+              <div class="sr-val" id="flangerRateVal">0.50 Hz</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Tremolo Rate <span class="badge amber">TREM</span></div>
+                <input type="range" id="tremoloRateCtrl" min="0.5" max="20" step="0.5" value="5" />
+              </div>
+              <div class="sr-val" id="tremoloRateVal">5 Hz</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Tremolo Depth <span class="badge amber">TREM</span></div>
+                <input type="range" id="tremoloDepthCtrl" min="0" max="100" step="5" value="0" />
+              </div>
+              <div class="sr-val" id="tremoloDepthVal">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: FILTER -->
+        <div class="tab-pane" id="tab-filter">
+          <div class="sliders">
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Low-Pass Freq <span class="badge">FILTER</span></div>
+                <input type="range" id="lpfCtrl" min="200" max="20000" step="100" value="20000" />
+              </div>
+              <div class="sr-val" id="lpfVal">20k Hz</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Low-Pass Q <span class="badge">FILTER</span></div>
+                <input type="range" id="lpfQCtrl" min="0.1" max="20" step="0.1" value="1" />
+              </div>
+              <div class="sr-val" id="lpfQVal">1.0</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">High-Pass Freq <span class="badge rose">FILTER</span></div>
+                <input type="range" id="hpfCtrl" min="10" max="2000" step="10" value="10" />
+              </div>
+              <div class="sr-val" id="hpfVal">10 Hz</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">High-Pass Q <span class="badge rose">FILTER</span></div>
+                <input type="range" id="hpfQCtrl" min="0.1" max="20" step="0.1" value="1" />
+              </div>
+              <div class="sr-val" id="hpfQVal">1.0</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Notch Freq <span class="badge amber">NOTCH</span></div>
+                <input type="range" id="notchCtrl" min="200" max="8000" step="50" value="1000" />
+              </div>
+              <div class="sr-val" id="notchVal">1000 Hz</div>
+            </div>
+            <div class="sr">
+              <div class="sr-l">
+                <div class="sr-lbl">Notch Depth <span class="badge amber">NOTCH</span></div>
+                <input type="range" id="notchDepthCtrl" min="0" max="100" step="5" value="0" />
+              </div>
+              <div class="sr-val" id="notchDepthVal">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEEK BAR -->
+        <div class="sl">playback</div>
+        <div class="seek-row">
+          <div class="seek-times">
+            <span class="seek-cur" id="seekCur">0:00</span>
+            <span class="seek-dur" id="seekDur">0:00</span>
+          </div>
+          <input type="range" id="seekCtrl" min="0" max="100" step="0.1" value="0" disabled />
+        </div>
+
+        <div class="viz-wrap"><canvas id="viz"></canvas></div>
+        <div class="wave-wrap"><canvas id="waveViz"></canvas></div>
+
+        <div class="btn-row">
+          <button class="btn btn-play" id="playBtn" disabled>
+            <span id="playIco">▶</span><span id="playLbl">Play 8D</span>
+          </button>
+          <button class="btn btn-loop" id="loopBtn" disabled title="Loop">↻ Loop</button>
+          <button class="btn btn-dl" id="dlBtn" disabled>⤓ Export</button>
+        </div>
+
+        <div class="prog" id="prog">
+          <div class="prog-top">
+            <span id="progTxt">rendering…</span><span id="progPct">0%</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+        </div>
+      </section>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
