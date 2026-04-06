@@ -237,6 +237,163 @@
       /* toast */
       .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(55px); background:rgba(10,10,18,.96); border:1px solid var(--bdr); border-radius:6px; padding:8px 15px; font-size:10px; letter-spacing:.5px; color:var(--text); backdrop-filter:blur(16px); z-index:99; transition:transform .33s cubic-bezier(.34,1.4,.64,1); white-space:nowrap; }
       .toast.show { transform:translateX(-50%) translateY(0); }
+
+      /* ══ PLAYLIST FLOATING PANEL ══ */
+      #queue-fab {
+        position:fixed; bottom:28px; right:28px; z-index:200;
+        width:50px; height:50px; border-radius:50%;
+        background:linear-gradient(135deg, var(--mint), rgba(0,180,140,.8));
+        border:none; cursor:pointer; color:#050910;
+        font-size:20px; display:flex; align-items:center; justify-content:center;
+        box-shadow:0 4px 22px rgba(0,232,176,.35), 0 2px 8px rgba(0,0,0,.5);
+        transition:transform .2s, box-shadow .2s;
+      }
+      #queue-fab:hover { transform:scale(1.1); box-shadow:0 6px 30px rgba(0,232,176,.5); }
+      #queue-fab .fab-badge {
+        position:absolute; top:-3px; right:-3px; width:18px; height:18px;
+        border-radius:50%; background:var(--rose); color:#fff;
+        font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;
+        border:2px solid var(--bg); display:none;
+      }
+      #queue-fab .fab-badge.on { display:flex; }
+
+      #queue-panel {
+        position:fixed; bottom:90px; right:28px; z-index:199;
+        width:320px; max-height:520px;
+        background:rgba(10,10,20,.97); border:1px solid rgba(255,255,255,.1);
+        border-radius:14px; overflow:hidden;
+        backdrop-filter:blur(24px);
+        box-shadow:0 16px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(0,232,176,.06);
+        display:flex; flex-direction:column;
+        transform:translateY(20px) scale(0.95); opacity:0; pointer-events:none;
+        transition:transform .28s cubic-bezier(.34,1.3,.64,1), opacity .22s ease;
+      }
+      #queue-panel.open { transform:translateY(0) scale(1); opacity:1; pointer-events:all; }
+
+      .qp-header {
+        padding:14px 16px 10px;
+        border-bottom:1px solid rgba(255,255,255,.07);
+        flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+      }
+      .qp-title { font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--mint); font-weight:500; }
+      .qp-count { font-size:8px; letter-spacing:1px; color:var(--dim); }
+
+      /* Now playing strip */
+      .qp-now {
+        padding:12px 16px; background:rgba(0,232,176,.05);
+        border-bottom:1px solid rgba(0,232,176,.1); flex-shrink:0;
+        display:flex; align-items:center; gap:10px;
+      }
+      .qp-now-dot { width:8px; height:8px; border-radius:50%; background:var(--mint); flex-shrink:0;
+        box-shadow:0 0 8px var(--mint); animation:blink 1.2s ease-in-out infinite; }
+      .qp-now-dot.idle { background:var(--dim); box-shadow:none; animation:none; }
+      .qp-now-info { flex:1; min-width:0; }
+      .qp-now-name { font-size:10px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:.3px; }
+      .qp-now-sub { font-size:8px; color:var(--dim); letter-spacing:1px; margin-top:2px; }
+      .qp-now-dur { font-size:9px; color:var(--amber); letter-spacing:.5px; flex-shrink:0; }
+
+      /* Queue tabs */
+      .qp-tabs { display:flex; padding:10px 12px 0; gap:4px; flex-shrink:0; }
+      .qp-tab { flex:1; padding:6px 0; background:none; border:none; cursor:pointer;
+        font-family:var(--mono); font-size:8px; letter-spacing:1.5px; text-transform:uppercase;
+        color:var(--dim); border-radius:5px; border-bottom:2px solid transparent;
+        transition:all .18s; }
+      .qp-tab.active { color:var(--mint); border-bottom-color:var(--mint); }
+      .qp-tab:hover:not(.active) { color:var(--text); }
+
+      /* Track list */
+      .qp-list {
+        flex:1; overflow-y:auto; padding:8px 0;
+        scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.08) transparent;
+      }
+      .qp-list::-webkit-scrollbar { width:3px; }
+      .qp-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:2px; }
+
+      .qp-empty { padding:28px 16px; text-align:center; }
+      .qp-empty-ico { font-size:28px; opacity:.25; margin-bottom:8px; }
+      .qp-empty-txt { font-size:9px; letter-spacing:1.5px; color:var(--dim); text-transform:uppercase; }
+      .qp-empty-sub { font-size:8px; color:rgba(221,216,240,.2); margin-top:5px; letter-spacing:.5px; }
+
+      .qp-track {
+        display:flex; align-items:center; gap:10px;
+        padding:8px 16px; cursor:pointer;
+        transition:background .16s;
+        position:relative;
+      }
+      .qp-track:hover { background:rgba(255,255,255,.04); }
+      .qp-track.active { background:rgba(0,232,176,.07); }
+      .qp-track.active::before {
+        content:""; position:absolute; left:0; top:0; bottom:0;
+        width:2px; background:var(--mint); border-radius:0 2px 2px 0;
+      }
+      .qp-track-num {
+        width:18px; text-align:center; font-size:9px; color:var(--dim);
+        flex-shrink:0; letter-spacing:.5px;
+      }
+      .qp-track.active .qp-track-num { color:var(--mint); }
+      .qp-track-ico { width:34px; height:34px; border-radius:6px; flex-shrink:0;
+        background:linear-gradient(135deg, rgba(0,232,176,.15), rgba(167,139,250,.1));
+        border:1px solid rgba(255,255,255,.07);
+        display:flex; align-items:center; justify-content:center; font-size:13px;
+        transition:transform .15s; }
+      .qp-track:hover .qp-track-ico { transform:scale(1.05); }
+      .qp-track.active .qp-track-ico { background:linear-gradient(135deg,rgba(0,232,176,.3),rgba(0,232,176,.1)); border-color:rgba(0,232,176,.3); }
+
+      .qp-track-info { flex:1; min-width:0; }
+      .qp-track-name { font-size:10px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:.2px; }
+      .qp-track.active .qp-track-name { color:var(--mint); }
+      .qp-track-meta { font-size:7.5px; color:var(--dim); margin-top:2px; letter-spacing:.5px; }
+
+      .qp-track-dur { font-size:8.5px; color:var(--dim); letter-spacing:.5px; flex-shrink:0; }
+      .qp-track.active .qp-track-dur { color:var(--amber); }
+
+      .qp-track-del {
+        width:22px; height:22px; border-radius:4px; background:none; border:none;
+        cursor:pointer; color:var(--dim); font-size:11px; display:flex; align-items:center; justify-content:center;
+        opacity:0; transition:opacity .15s, background .15s, color .15s; flex-shrink:0;
+      }
+      .qp-track:hover .qp-track-del { opacity:1; }
+      .qp-track-del:hover { background:rgba(255,85,119,.15); color:var(--rose); }
+
+      /* Shuffle/Repeat controls */
+      .qp-controls {
+        padding:10px 16px; border-top:1px solid rgba(255,255,255,.06);
+        display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+      }
+      .qp-ctrl-btn {
+        background:none; border:none; cursor:pointer; font-family:var(--mono);
+        font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim);
+        padding:5px 8px; border-radius:5px; transition:all .16s; display:flex; align-items:center; gap:5px;
+      }
+      .qp-ctrl-btn:hover { color:var(--text); background:rgba(255,255,255,.04); }
+      .qp-ctrl-btn.on { color:var(--mint); }
+      .qp-ctrl-btn .ico { font-size:13px; }
+
+      /* Prev/Next nav */
+      .qp-nav { display:flex; gap:4px; }
+      .qp-nav-btn {
+        width:30px; height:30px; border-radius:6px; background:rgba(255,255,255,.04);
+        border:1px solid var(--bdr); cursor:pointer; color:var(--dim); font-size:12px;
+        display:flex; align-items:center; justify-content:center;
+        transition:all .16s;
+      }
+      .qp-nav-btn:hover:not(:disabled) { background:rgba(255,255,255,.08); color:var(--text); border-color:rgba(255,255,255,.18); }
+      .qp-nav-btn:disabled { opacity:.25; cursor:not-allowed; }
+
+      /* Drop zone overlay for playlist */
+      .qp-drop-hint {
+        padding:8px 16px 12px; text-align:center;
+        font-size:7.5px; letter-spacing:1.5px; color:rgba(221,216,240,.2); text-transform:uppercase;
+        border-top:1px solid rgba(255,255,255,.04); flex-shrink:0;
+      }
+
+      /* ── Animated equalizer bars (playing indicator) ── */
+      .eq-bars { display:flex; align-items:flex-end; gap:1.5px; height:12px; }
+      .eq-bar { width:2.5px; border-radius:1px; background:var(--mint); }
+      .eq-bars.playing .eq-bar:nth-child(1) { animation:eqb .7s .0s ease-in-out infinite alternate; }
+      .eq-bars.playing .eq-bar:nth-child(2) { animation:eqb .7s .15s ease-in-out infinite alternate; }
+      .eq-bars.playing .eq-bar:nth-child(3) { animation:eqb .7s .3s ease-in-out infinite alternate; }
+      @keyframes eqb { from{height:3px} to{height:12px} }
     </style>
   </head>
   <body>
@@ -594,8 +751,48 @@
         </div>
       </section>
     </div>
-    <div class="toast" id="toast"></div>
+    <!-- ══ QUEUE FLOATING PANEL ══ -->
+    <button id="queue-fab" title="Playlist / Queue">
+      <span>♫</span>
+      <div class="fab-badge" id="fabBadge">0</div>
+    </button>
 
+    <div id="queue-panel">
+      <div class="qp-header">
+        <span class="qp-title">♫ Playlist</span>
+        <span class="qp-count" id="qpCount">0 lagu</span>
+      </div>
+      <div class="qp-now">
+        <div class="qp-now-dot idle" id="qpNowDot"></div>
+        <div class="qp-now-info">
+          <div class="qp-now-name" id="qpNowName">Tidak ada lagu dipilih</div>
+          <div class="qp-now-sub" id="qpNowSub">Tambah lagu ke playlist</div>
+        </div>
+        <div class="qp-now-dur" id="qpNowDur">—</div>
+      </div>
+      <div class="qp-tabs">
+        <button class="qp-tab active" data-qptab="queue">Antrian</button>
+        <button class="qp-tab" data-qptab="history">Riwayat</button>
+      </div>
+      <div class="qp-list" id="qpList">
+        <div class="qp-empty" id="qpEmpty">
+          <div class="qp-empty-ico">🎵</div>
+          <div class="qp-empty-txt">Playlist kosong</div>
+          <div class="qp-empty-sub">Upload atau YouTube → otomatis masuk playlist</div>
+        </div>
+      </div>
+      <div class="qp-drop-hint">Drag file audio ke sini untuk tambah playlist</div>
+      <div class="qp-controls">
+        <button class="qp-ctrl-btn" id="qpShuffle" title="Shuffle"><span class="ico">⇄</span> Acak</button>
+        <div class="qp-nav">
+          <button class="qp-nav-btn" id="qpPrev" title="Sebelumnya" disabled>◀◀</button>
+          <button class="qp-nav-btn" id="qpNext" title="Selanjutnya" disabled>▶▶</button>
+        </div>
+        <button class="qp-ctrl-btn" id="qpRepeat" title="Repeat"><span class="ico">↻</span> Ulang</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
     <script src="script.js"></script>
   </body>
 </html>
