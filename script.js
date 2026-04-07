@@ -973,7 +973,7 @@ async function loadYoutube() {
   }
 
   ytBtn.disabled = true;
-  const YTDROP = "https://layer-spaces-decor-derek.trycloudflare.com";
+  const YTDROP = "http://localhost:3001"; // "https://layer-spaces-decor-derek.trycloudflare.com";
 
   /* ── Step 1: ambil info video (judul, format list) ── */
   ytSetStatus("loading", "Mengambil info video...", true);
